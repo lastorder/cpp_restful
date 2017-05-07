@@ -18,6 +18,7 @@
 
 #include "http_module_log.h"
 #include "http_server.h"
+#include "http_client.h"
 
 LogFuc g_logfuc = NULL;
 HTTP_API int http_module_init(LogFuc fuc)
@@ -47,3 +48,9 @@ HTTP_API http_server_if* http_creat_server()
 {
     return new http_server();
 }
+
+HTTP_API http_client_if * http_creat_client(const char * ip, unsigned short port)
+{
+    return new http_client(ip,port);
+}
+

@@ -26,12 +26,18 @@
     <ClInclude Include="src\http_server.h">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="src\http_client.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\http_module.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="src\http_server.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="src\http_client.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

@@ -54,10 +54,20 @@ public:
 };
 
 
+class http_client_if
+{
+public:
+    virtual void setTimeOut(const unsigned int timeout) = 0;
+    virtual PairIntString request(int opt, const std::string& url, MapStringString params, const std::string & data) = 0;
+};
+
+
+
 using LogFuc = std::function<void(int level,const char* msg)>;
 
 HTTP_API int http_module_init(LogFuc fuc = NULL);
 HTTP_API http_server_if* http_creat_server();
+HTTP_API http_client_if* http_creat_client(const char* ip,unsigned short port);
 
 
 
