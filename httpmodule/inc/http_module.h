@@ -1,13 +1,13 @@
 #pragma once
 
 #ifdef _WIN32
-	#ifdef HTTPMODULE_EXPORTS
-	#define HTTP_API __declspec(dllexport)
-	#else
-	#define HTTP_API __declspec(dllimport)
-	#endif
+    #ifdef HTTPMODULE_EXPORTS
+    #define HTTP_API __declspec(dllexport)
+    #else
+    #define HTTP_API __declspec(dllimport)
+    #endif
 #else
-	#define HTTP_API
+    #define HTTP_API
 #endif
 
 
@@ -21,10 +21,10 @@ using HttpFuc = std::function<PairIntString(const MapStringString& params, const
 
 struct http_server_fuc_struc
 {
-	int opt;
-	std::string url;
-	HttpFuc fuc;
-	bool isSeparateThread;
+    int opt;
+    std::string url;
+    HttpFuc fuc;
+    bool isSeparateThread;
 };
 
 #define HTTP_OPT_GET 1
@@ -38,18 +38,18 @@ class http_server_if
 {
 public:
 
-	virtual void setThreadCount(const unsigned int port) = 0;
-	virtual void setTimeOut(const unsigned int timeout) = 0;
-	virtual void registFuction(int opt, const std::string& url, HttpFuc fuc, bool isSeparateThread = false) = 0;
-	virtual int start(const char* ip, const unsigned short port) = 0;
+    virtual void setThreadCount(const unsigned int port) = 0;
+    virtual void setTimeOut(const unsigned int timeout) = 0;
+    virtual void registFuction(int opt, const std::string& url, HttpFuc fuc, bool isSeparateThread = false) = 0;
+    virtual int start(const char* ip, const unsigned short port) = 0;
 
-	void registFuction(const http_server_fuc_struc fuclist[], size_t size)
-	{
-		for (size_t i = 0; i < size; i++)
-		{
-			registFuction(fuclist[i].opt, fuclist[i].url, fuclist[i].fuc, fuclist[i].isSeparateThread);
-		}
-	};
+    void registFuction(const http_server_fuc_struc fuclist[], size_t size)
+    {
+        for (size_t i = 0; i < size; i++)
+        {
+            registFuction(fuclist[i].opt, fuclist[i].url, fuclist[i].fuc, fuclist[i].isSeparateThread);
+        }
+    };
 
 };
 

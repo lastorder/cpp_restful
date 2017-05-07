@@ -9,7 +9,7 @@
 
 void logimpl(int level, const char* msg)
 {
-	std::cout << msg << std::endl;
+    std::cout << msg << std::endl;
 }
 
 #define LOG_TRACE_D(msg) LOG_FORMAT_MSG(logimpl,0,"HTTP_MODULE",msg)
@@ -18,26 +18,26 @@ void logimpl(int level, const char* msg)
 
 PairIntString test(const MapStringString& params, const std::string data)
 {
-	return PairIntString(200, "hello world");
+    return PairIntString(200, "hello world");
 }
 
 struct http_server_fuc_struc g_fuclist[] = {
-	{ 1, "/test", test, false},
-	{ 2,"/test",test,false }
+    { HTTP_OPT_GET, "/test",test, false},
+    { HTTP_OPT_POST,"/test",test,false }
 };
 
 
 int main()
 {
-	LOG_TRACE_D("Hello world!");
+    LOG_TRACE_D("Hello world!");
 
-	int ret = http_module_init(logimpl);
+    int ret = http_module_init(logimpl);
 
-	auto serverPtr = http_creat_server();
-	serverPtr->registFuction(g_fuclist,sizeof(g_fuclist)/sizeof(http_server_fuc_struc));
-	serverPtr->start("127.0.0.1",9090);
+    auto serverPtr = http_creat_server();
+    serverPtr->registFuction(g_fuclist,sizeof(g_fuclist)/sizeof(http_server_fuc_struc));
+    serverPtr->start("127.0.0.1",9090);
 
-	system("Pause");
+    system("Pause");
     return 0;
 }
 

@@ -22,28 +22,28 @@
 LogFuc g_logfuc = NULL;
 HTTP_API int http_module_init(LogFuc fuc)
 {
-	g_logfuc = fuc;
-	LOG_TRACE_D("http_module_init !");
+    g_logfuc = fuc;
+    LOG_TRACE_D("http_module_init !");
 #ifdef _WIN32
-	WORD wVersionRequested;
-	WSADATA wsaData;
-	int err;
-	wVersionRequested = MAKEWORD(2, 2);
-	err = WSAStartup(wVersionRequested, &wsaData);
-	if (err != 0) {
-		LOG_TRACE_D("WSAStartup failed with error");
-		return (1);
-	}
+    WORD wVersionRequested;
+    WSADATA wsaData;
+    int err;
+    wVersionRequested = MAKEWORD(2, 2);
+    err = WSAStartup(wVersionRequested, &wsaData);
+    if (err != 0) {
+        LOG_TRACE_D("WSAStartup failed with error");
+        return (1);
+    }
 #else
-	if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
-		LOG_TRACE_D("SIG_IGN failed with error");
-		return (1);
-	}
+    if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
+        LOG_TRACE_D("SIG_IGN failed with error");
+        return (1);
+    }
 #endif
-	return 0;
+    return 0;
 }
 
 HTTP_API http_server_if* http_creat_server()
 {
-	return new http_server();
+    return new http_server();
 }
