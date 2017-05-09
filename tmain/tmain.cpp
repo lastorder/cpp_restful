@@ -27,6 +27,9 @@ struct http_server_fuc_struc g_fuclist[] = {
 };
 
 
+#define IP "127.0.0.1"
+#define PORT 8080
+
 int main()
 {
     LOG_TRACE_D("Hello world!");
@@ -35,7 +38,17 @@ int main()
 
     auto serverPtr = http_creat_server();
     serverPtr->registFuction(g_fuclist,sizeof(g_fuclist)/sizeof(http_server_fuc_struc));
-    serverPtr->start("127.0.0.1",9090);
+    serverPtr->start(IP, PORT);
+
+    std::chrono::seconds dura(2);
+    std::this_thread::sleep_for(dura);
+
+    MapStringString params; //= { ("ABC","¶­Óî"),("cd","test") };
+    params["ABC"] = "¶­Óî";
+    params["cde"] = "test";
+
+    auto clientPtr = http_creat_client(IP, PORT);
+    auto resturn = clientPtr->request(HTTP_OPT_POST, "/test", params, "hello world!");
 
     system("Pause");
     return 0;

@@ -1,6 +1,32 @@
 #include "http_client.h"
 #include "http_module_log.h"
 
+std::string get_http_input_data(struct evhttp_request *req)
+{
+    std::string data = "";
+    struct evbuffer *evbuf = evhttp_request_get_input_buffer(req);
+    // NULL terminal buffer
+    if (evbuf)
+    {
+        evbuffer_add(evbuf, "", 1);
+        const char * pData = (char*)evbuffer_pullup(evbuf, -1);
+        if (pData)
+        {
+            data = pData;
+        }
+        else
+        {
+            LOG_TRACE_E("evbuffer data is null ! ");
+        }
+    }
+    else
+    {
+        LOG_TRACE_E("evbuffer is null ! ");
+    }
+
+    return data;
+}
+
 static void http_client_cb(struct evhttp_request *req, void *arg)
 {
     if (!arg)
@@ -14,16 +40,8 @@ static void http_client_cb(struct evhttp_request *req, void *arg)
     }
 
     http_client* clientptr = (http_client *)arg;
-
     clientptr->m_httpCode = evhttp_request_get_response_code(req);
-
-    struct evbuffer *evbuf = evhttp_request_get_input_buffer(req);
-    evbuffer_add(evbuf, "\0", 1);
-    char * pData = (char*)evbuffer_pullup(evbuf, -1);
-    if (pData)
-    {
-        clientptr->m_httpData = pData;
-    }
+    clientptr->m_httpData = get_http_input_data(req);
 
     event_base_loopexit(clientptr->m_eventbase, NULL);
 }
@@ -44,6 +62,8 @@ PairIntString http_client::request(int opt, const std::string & url, MapStringSt
     auto t1 = std::chrono::steady_clock::now();
     m_httpCode = HTTP_BADREQUEST;
     m_httpData = "Client Error!";
+
+    //formate query url
     auto req = evhttp_request_new(http_client_cb, this);
     std::string newUrl = url;
     if (!params.empty())
@@ -61,6 +81,16 @@ PairIntString http_client::request(int opt, const std::string & url, MapStringSt
         newUrl = newUrl.substr(0,newUrl.length()-1);
     }
 
+    // add request data
+    if (!data.empty())
+    {
+        auto output_buffer = evhttp_request_get_output_buffer(req);
+        evbuffer_add(output_buffer, data.c_str(), data.length());
+        auto output_headers = evhttp_request_get_output_headers(req);
+        evhttp_add_header(output_headers, "Content-Length", std::to_string(data.length()).c_str());
+    }
+
+    //start request
     int ret = evhttp_make_request(m_connection, req,(evhttp_cmd_type)opt, newUrl.c_str());
     if (ret != 0) {
         LOG_TRACE_D("evhttp_make_request failed !");

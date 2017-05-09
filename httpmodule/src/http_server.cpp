@@ -8,6 +8,8 @@
 #include <thread>
 #include <chrono>
 
+extern std::string get_http_input_data(struct evhttp_request *req);
+
 static void http_prase_query(const char* qstr, std::map<std::string, std::string>& qmap)
 {
     if (NULL == qstr)
@@ -59,9 +61,14 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     {
         evhttp_send_error(req, HTTP_INTERNAL, "Server ptr is NULL !");
     }
+    auto request_data = get_http_input_data(req);
+    if (!request_data.empty())
+    {
+        LOG_TRACE_D("request data : "<< request_data.c_str());
+    }
 
     http_server* serverPtr = (http_server*)arg;
-    serverPtr->serverHand(req,opt, path, params, "");
+    serverPtr->serverHand(req,opt, path, params, request_data);
 
 }
 
