@@ -5,7 +5,7 @@
 #include "../httpmodule/inc/http_module.h"
 #include "../httpmodule/inc/log_base.h"
 
-
+#include <thread>
 
 void logimpl(int level, const char* msg)
 {
@@ -18,12 +18,20 @@ void logimpl(int level, const char* msg)
 
 PairIntString test(const MapStringString& params, const std::string data)
 {
-    return PairIntString(200, "hello world");
+    return PairIntString(200, "hello world test");
+}
+
+PairIntString sleep(const MapStringString& params, const std::string data)
+{
+    std::this_thread::sleep_for(std::chrono::seconds(30));
+    return PairIntString(200, "sleep for 30 secends !");
 }
 
 struct http_server_fuc_struc g_fuclist[] = {
-    { HTTP_OPT_GET, "/test",test, false},
-    { HTTP_OPT_POST,"/test",test,false }
+    { HTTP_OPT_GET, "/test",test, true},
+    { HTTP_OPT_POST,"/test",test,true },
+    { HTTP_OPT_GET, "/sleep",sleep, true},
+    { HTTP_OPT_POST,"/sleep",sleep,true }
 };
 
 
@@ -48,8 +56,8 @@ int main()
     params["cde"] = "test";
 
     auto clientPtr = http_creat_client(IP, PORT);
-    auto resturn = clientPtr->request(HTTP_OPT_POST, "/test", params, "hello world!");
-
+    auto resturn = clientPtr->request(HTTP_OPT_POST, "/test2", params, "hello world!");
+    resturn = clientPtr->request(HTTP_OPT_POST, "/test", params, "hello world!");
     system("Pause");
     return 0;
 }

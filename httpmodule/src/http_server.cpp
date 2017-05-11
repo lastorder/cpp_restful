@@ -50,9 +50,9 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
         return;
     }
 
-    /* Let's see what path the user asked for. */
     const char* path = evhttp_uri_get_path(decoded);
-    if (!path) path = "/";
+    std::string strUrl = "/";
+    if (path) strUrl = path;
 
     std::map<std::string, std::string> params;
     http_prase_query(evhttp_uri_get_query(decoded), params);
@@ -68,7 +68,39 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     }
 
     http_server* serverPtr = (http_server*)arg;
-    serverPtr->serverHand(req,opt, path, params, request_data);
+    auto fuc = serverPtr->getFuction(opt, strUrl);
+
+    if (nullptr == fuc.first)
+    {
+        evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
+        LOG_TRACE_D("Server path not implemented ! ");
+        return;
+    }
+    else
+    {
+        auto hand = [](HttpFuc fuc,MapStringString params,std::string data, struct evhttp_request *req) {
+            struct evbuffer *evb = evbuffer_new();
+            ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); });
+
+            auto t1 = std::chrono::steady_clock::now();
+            auto result = fuc(params, data);
+            auto t2 = std::chrono::steady_clock::now();
+            auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+            LOG_TRACE_D("Time use : " << std::fixed << std::setprecision(3) << time_span.count());
+
+            evbuffer_add_printf(evb, result.second.c_str());
+            evhttp_send_reply(req, result.first, "OK", evb);
+        };
+
+        if (fuc.second)
+        {
+            std::thread(hand, fuc.first, params, request_data, req).detach();
+        }
+        else
+        {
+            hand(fuc.first,params, request_data,req);
+        }
+    }
 
 }
 
@@ -152,50 +184,13 @@ int http_server::start(const char * ip, const unsigned short port)
     return 0;
 }
 
-void http_server::serverHand(struct evhttp_request *req,int opt, const std::string & url, const MapStringString & params, const std::string & data)
+ServerFucMapValue http_server::getFuction(int opt, const std::string & url)
 {
-    HttpFuc fuc = NULL;
-    bool isSThread = false;
-
+    std::lock_guard<std::mutex> grd(m_fucMapMutex);
+    auto it = m_server_fuc_map.find(std::make_pair(opt, url));
+    if (it != m_server_fuc_map.end())
     {
-        std::lock_guard<std::mutex> grd(m_fucMapMutex);
-        auto it = m_server_fuc_map.find(std::make_pair(opt, url));
-        if (it != m_server_fuc_map.end())
-        {
-            fuc = it->second.first;
-            isSThread = it->second.second;
-        }
+        return it->second;
     }
-
-    if (NULL == fuc)
-    {
-        evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
-
-        LOG_TRACE_D("Server path not implemented ! ");
-        return;
-    }
-
-    auto hand = [&]() {
-        struct evbuffer *evb = evb = evbuffer_new();
-        ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); });
-
-        auto t1 = std::chrono::steady_clock::now();
-        auto result = fuc(params, data);
-        auto t2 = std::chrono::steady_clock::now();
-        auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-        LOG_TRACE_D("Time use : " << std::fixed << std::setprecision(3) << time_span.count() << "  url: " << url);
-
-        evbuffer_add_printf(evb, result.second.c_str());
-        evhttp_send_reply(req, result.first, "OK", evb);
-
-    };
-
-    if (isSThread)
-    {
-        std::thread(hand).detach();
-    }
-    else
-    {
-        hand();
-    }
+    return ServerFucMapValue();
 }

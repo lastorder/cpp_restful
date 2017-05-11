@@ -24,7 +24,9 @@ public:
     virtual void setTimeOut(const unsigned int timeout);
     virtual void registFuction(int opt, const std::string& url, HttpFuc fuc, bool isSeparateThread);
     virtual int start(const char* ip, const unsigned short port);
-    void serverHand(struct evhttp_request *req,int opt, const std::string&  url, const MapStringString& params, const std::string& data);
+
+    ServerFucMapValue getFuction(int opt, const std::string& url);
+
 
 private:
     unsigned int m_fixThreadCount;

@@ -19,6 +19,7 @@
 #include "http_module_log.h"
 #include "http_server.h"
 #include "http_client.h"
+#include "event2\thread.h "
 
 LogFuc g_logfuc = NULL;
 HTTP_API int http_module_init(LogFuc fuc)
@@ -35,10 +36,29 @@ HTTP_API int http_module_init(LogFuc fuc)
         LOG_TRACE_D("WSAStartup failed with error");
         return (1);
     }
+
+    if (0 == evthread_use_windows_threads())
+    {
+        LOG_TRACE_D("evthread_use_windows_threads success !");
+    }
+    else
+    {
+        LOG_TRACE_D("evthread_use_windows_threads failed !");
+        return 1;
+    }
 #else
     if (signal(SIGPIPE, SIG_IGN) == SIG_ERR) {
         LOG_TRACE_D("SIG_IGN failed with error");
         return (1);
+    }
+    if (0 == evthread_use_pthreads())
+    {
+        LOG_TRACE_D("evthread_use_pthreads success !");
+    }
+    else
+    {
+        LOG_TRACE_D("evthread_use_pthreads failed !");
+        return 1;
     }
 #endif
     return 0;
