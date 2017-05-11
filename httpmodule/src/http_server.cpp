@@ -78,12 +78,12 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     }
     else
     {
-        auto hand = [](HttpFuc fuc,MapStringString params,std::string data, struct evhttp_request *req) {
+        auto hand = [=]() {
             struct evbuffer *evb = evbuffer_new();
             ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); });
 
             auto t1 = std::chrono::steady_clock::now();
-            auto result = fuc(params, data);
+            auto result = fuc.first(params, request_data);
             auto t2 = std::chrono::steady_clock::now();
             auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
             LOG_TRACE_D("Time use : " << std::fixed << std::setprecision(3) << time_span.count());
@@ -94,11 +94,11 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
 
         if (fuc.second)
         {
-            std::thread(hand, fuc.first, params, request_data, req).detach();
+            std::thread(hand).detach();
         }
         else
         {
-            hand(fuc.first,params, request_data,req);
+            hand();
         }
     }
 

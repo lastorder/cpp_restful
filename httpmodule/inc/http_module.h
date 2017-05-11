@@ -14,6 +14,7 @@
 #include <map>
 #include <functional>
 #include <memory>
+#include <vector>
 
 using PairIntString = std::pair<int, std::string>;
 using MapStringString = std::map<std::string, std::string>;
@@ -43,11 +44,11 @@ public:
     virtual void registFuction(int opt, const std::string& url, HttpFuc fuc, bool isSeparateThread = false) = 0;
     virtual int start(const char* ip, const unsigned short port) = 0;
 
-    void registFuction(const http_server_fuc_struc fuclist[], size_t size)
+    void registFuction(const std::vector<http_server_fuc_struc> fuclist)
     {
-        for (size_t i = 0; i < size; i++)
+        for (auto& fuc: fuclist)
         {
-            registFuction(fuclist[i].opt, fuclist[i].url, fuclist[i].fuc, fuclist[i].isSeparateThread);
+            registFuction(fuc.opt, fuc.url, fuc.fuc, fuc.isSeparateThread);
         }
     };
 

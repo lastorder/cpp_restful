@@ -27,7 +27,7 @@ PairIntString sleep(const MapStringString& params, const std::string data)
     return PairIntString(200, "sleep for 30 secends !");
 }
 
-struct http_server_fuc_struc g_fuclist[] = {
+std::vector<http_server_fuc_struc> g_fuclist = {
     { HTTP_OPT_GET, "/test",test, true},
     { HTTP_OPT_POST,"/test",test,true },
     { HTTP_OPT_GET, "/sleep",sleep, true},
@@ -45,19 +45,19 @@ int main()
     int ret = http_module_init(logimpl);
 
     auto serverPtr = http_creat_server();
-    serverPtr->registFuction(g_fuclist,sizeof(g_fuclist)/sizeof(http_server_fuc_struc));
+    serverPtr->registFuction(g_fuclist);
     serverPtr->start(IP, PORT);
 
     std::chrono::seconds dura(2);
     std::this_thread::sleep_for(dura);
 
-    MapStringString params; //= { ("ABC","¶­Óî"),("cd","test") };
-    params["ABC"] = "¶­Óî";
-    params["cde"] = "test";
+    MapStringString params = { {"ABC","¶­Óî"},{"cd","test"} };
+
 
     auto clientPtr = http_creat_client(IP, PORT);
     auto resturn = clientPtr->request(HTTP_OPT_POST, "/test2", params, "hello world!");
     resturn = clientPtr->request(HTTP_OPT_POST, "/test", params, "hello world!");
+    resturn = clientPtr->request(HTTP_OPT_POST, "/sleep", params, "hello world!");
     system("Pause");
     return 0;
 }
