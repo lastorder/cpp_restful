@@ -20,6 +20,7 @@ public:
         -> std::future<typename std::result_of<F(Args...)>::type>;
     template<class Period>
     bool wait(const size_t, const Period& period);
+    unsigned int task_size();
     ~ThreadPool();
 private:
     // need to keep track of threads so we can join them
@@ -93,6 +94,12 @@ inline bool ThreadPool::wait(const size_t size, const Period& period)
     std::unique_lock<std::mutex> lock(this->queue_mutex);
     auto hand = [this,size] { return this->tasks.size() <= size; };
     return this->condition_reduse.wait_for(lock, period, hand);
+}
+
+inline unsigned int ThreadPool::task_size()
+{
+    std::unique_lock<std::mutex> lock(this->queue_mutex);
+    return tasks.size();
 }
 
 // the destructor joins all threads

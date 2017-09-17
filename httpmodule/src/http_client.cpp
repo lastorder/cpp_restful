@@ -102,7 +102,7 @@ PairIntString http_client::request(int opt, const std::string & url, MapStringSt
 
     auto t2 = std::chrono::steady_clock::now();
     auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-    LOG_TRACE_D("http client time use : " << std::fixed << std::setprecision(3) << time_span.count() << "  ret: " << m_httpCode << "  "<< m_httpData.c_str());
+    LOG_TRACE_D("http client time use : " << std::fixed << std::setprecision(3) << time_span.count() << "  ret: " << m_httpCode);// << "  " << m_httpData.c_str());
     return PairIntString(m_httpCode, m_httpData);
 }
 

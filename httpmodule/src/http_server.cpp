@@ -75,8 +75,7 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
 
     http_server* serverPtr = (http_server*)arg;
 
-    bool isNotBusy = serverPtr->m_pool.wait(serverPtr->m_fixThreadCount, std::chrono::milliseconds(20));
-    if (!isNotBusy)
+    if (serverPtr->m_pool.task_size() > 4* serverPtr->m_fixThreadCount)
     {
         evhttp_send_error(req, HTTP_SERVUNAVAIL, "Server is busy!");
         LOG_TRACE_D("Server is busy! ");
@@ -98,11 +97,11 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
             struct evbuffer *evb = evbuffer_new();
             ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); });
 
-            auto t1 = std::chrono::steady_clock::now();
+            LOG_TRACE_D("Start hand " << strUrl);
+            auto time_start = std::chrono::steady_clock::now();
             auto result = fuc(params, request_data);
-            auto t2 = std::chrono::steady_clock::now();
-            auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
-            LOG_TRACE_D("Time use : " << std::fixed << std::setprecision(3) << time_span.count());
+            auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - time_start);
+            LOG_TRACE_D("End hand " << strUrl <<" , Time use " << std::fixed << std::setprecision(3) << time_span.count());
 
             evbuffer_add_printf(evb, result.second.c_str());
             evhttp_send_reply(req, result.first, "OK", evb);

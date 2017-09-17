@@ -2,14 +2,19 @@
 //
 
 #include <iostream>
+#include <fstream>
+
 #include "../httpmodule/inc/http_module.h"
 #include "../httpmodule/inc/log_base.h"
 
 #include <thread>
 
+static std::ofstream  logFile("logfile.txt");
+
 void logimpl(int level, const char* msg)
 {
-    std::cout << msg << std::endl;
+    std::cout << msg;
+    logFile << msg;
 }
 
 #define LOG_TRACE_D(msg) LOG_FORMAT_MSG(logimpl,0,"HTTP_MODULE",msg)
