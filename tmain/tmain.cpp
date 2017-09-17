@@ -23,15 +23,15 @@ PairIntString test(const MapStringString& params, const std::string data)
 
 PairIntString sleep(const MapStringString& params, const std::string data)
 {
-    std::this_thread::sleep_for(std::chrono::seconds(30));
-    return PairIntString(200, "sleep for 30 secends !");
+    std::this_thread::sleep_for(std::chrono::seconds(10));
+    return PairIntString(200, "sleep for 10 secends !");
 }
 
 std::vector<http_server_fuc_struc> g_fuclist = {
-    { HTTP_OPT_GET, "/test",test, true},
-    { HTTP_OPT_POST,"/test",test,true },
-    { HTTP_OPT_GET, "/sleep",sleep, true},
-    { HTTP_OPT_POST,"/sleep",sleep,true }
+    { HTTP_OPT_GET, "/test",test},
+    { HTTP_OPT_POST,"/test",test },
+    { HTTP_OPT_GET, "/sleep",sleep},
+    { HTTP_OPT_POST,"/sleep",sleep }
 };
 
 
@@ -51,13 +51,30 @@ int main()
     std::chrono::seconds dura(2);
     std::this_thread::sleep_for(dura);
 
-    MapStringString params = { {"ABC","¶­Óî"},{"cd","test"} };
+    
+
+    auto testhand = [] {
+        MapStringString params = { { "ABC","¶­Óî" },{ "cd","test" } };
+        auto clientPtr = http_creat_client(IP, PORT);
+        auto resturn = clientPtr->request(HTTP_OPT_POST, "/test2", params, "hello world!");
+        resturn = clientPtr->request(HTTP_OPT_POST, "/test", params, "hello world!");
+        resturn = clientPtr->request(HTTP_OPT_POST, "/sleep", params, "hello world!");
+    };
+
+    while (true)
+    {
+        int i = 20;
+        while (i--)
+        {
+            std::thread(testhand).detach();
+        }
+
+        std::chrono::seconds dura(30);
+        std::this_thread::sleep_for(dura);
+    }
 
 
-    auto clientPtr = http_creat_client(IP, PORT);
-    auto resturn = clientPtr->request(HTTP_OPT_POST, "/test2", params, "hello world!");
-    resturn = clientPtr->request(HTTP_OPT_POST, "/test", params, "hello world!");
-    resturn = clientPtr->request(HTTP_OPT_POST, "/sleep", params, "hello world!");
+
     system("Pause");
     return 0;
 }

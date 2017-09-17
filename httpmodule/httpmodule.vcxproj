@@ -145,6 +145,7 @@
     <ClInclude Include="inc\http_module.h" />
     <ClInclude Include="inc\log_base.h" />
     <ClInclude Include="inc\scope_guard.h" />
+    <ClInclude Include="inc\ThreadPool.h" />
     <ClInclude Include="src\http_client.h" />
     <ClInclude Include="src\http_module_log.h" />
     <ClInclude Include="src\http_server.h" />

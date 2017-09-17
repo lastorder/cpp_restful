@@ -25,7 +25,6 @@ struct http_server_fuc_struc
     int opt;
     std::string url;
     HttpFuc fuc;
-    bool isSeparateThread;
 };
 
 #define HTTP_OPT_GET 1
@@ -39,16 +38,15 @@ class http_server_if
 {
 public:
 
-    virtual void setThreadCount(const unsigned int port) = 0;
     virtual void setTimeOut(const unsigned int timeout) = 0;
-    virtual void registFuction(int opt, const std::string& url, HttpFuc fuc, bool isSeparateThread = false) = 0;
+    virtual void registFuction(int opt, const std::string& url, HttpFuc fuc) = 0;
     virtual int start(const char* ip, const unsigned short port) = 0;
 
     void registFuction(const std::vector<http_server_fuc_struc> fuclist)
     {
         for (auto& fuc: fuclist)
         {
-            registFuction(fuc.opt, fuc.url, fuc.fuc, fuc.isSeparateThread);
+            registFuction(fuc.opt, fuc.url, fuc.fuc);
         }
     };
 
@@ -67,7 +65,7 @@ public:
 using LogFuc = std::function<void(int level,const char* msg)>;
 
 HTTP_API int http_module_init(LogFuc fuc = NULL);
-HTTP_API http_server_if* http_creat_server();
+HTTP_API http_server_if* http_creat_server(const unsigned int threads = 4);
 HTTP_API http_client_if* http_creat_client(const char* ip,unsigned short port);
 
 

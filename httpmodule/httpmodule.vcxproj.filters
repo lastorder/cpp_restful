@@ -29,6 +29,9 @@
     <ClInclude Include="src\http_client.h">
       <Filter>源文件</Filter>
     </ClInclude>
+    <ClInclude Include="inc\ThreadPool.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\http_module.cpp">

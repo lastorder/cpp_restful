@@ -64,9 +64,9 @@ HTTP_API int http_module_init(LogFuc fuc)
     return 0;
 }
 
-HTTP_API http_server_if* http_creat_server()
+HTTP_API http_server_if* http_creat_server(const unsigned int threads)
 {
-    return new http_server();
+    return new http_server(threads);
 }
 
 HTTP_API http_client_if * http_creat_client(const char * ip, unsigned short port)

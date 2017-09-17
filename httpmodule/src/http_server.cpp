@@ -25,12 +25,17 @@ static void http_prase_query(const char* qstr, std::map<std::string, std::string
         LOG_TRACE_D("evhttp_parse_query_str failed!! ");
         return;
     }
-    evhttp_parse_query_str(qstr,&querys);
 
     struct evkeyval *query;
     TAILQ_FOREACH(query, &querys, next) {
         qmap[query->key] = query->value;
     }
+}
+
+static struct bufferevent * http_bev_cb(struct event_base *base, void *arg)
+{
+    return bufferevent_socket_new(
+        base, -1,BEV_OPT_CLOSE_ON_FREE| BEV_OPT_CLOSE_ON_FREE| BEV_OPT_DEFER_CALLBACKS);
 }
 
 static void http_server_cb(struct evhttp_request *req, void *arg)
@@ -60,6 +65,7 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     if (NULL == arg)
     {
         evhttp_send_error(req, HTTP_INTERNAL, "Server ptr is NULL !");
+        return;
     }
     auto request_data = get_http_input_data(req);
     if (!request_data.empty())
@@ -68,9 +74,18 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     }
 
     http_server* serverPtr = (http_server*)arg;
+
+    bool isNotBusy = serverPtr->m_pool.wait(serverPtr->m_fixThreadCount, std::chrono::milliseconds(20));
+    if (!isNotBusy)
+    {
+        evhttp_send_error(req, HTTP_SERVUNAVAIL, "Server is busy!");
+        LOG_TRACE_D("Server is busy! ");
+        return;
+    }
+
     auto fuc = serverPtr->getFuction(opt, strUrl);
 
-    if (nullptr == fuc.first)
+    if (nullptr == fuc)
     {
         evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
         LOG_TRACE_D("Server path not implemented ! ");
@@ -78,36 +93,34 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     }
     else
     {
+        //evhttp_request_own(req);
         auto hand = [=]() {
             struct evbuffer *evb = evbuffer_new();
             ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); });
 
             auto t1 = std::chrono::steady_clock::now();
-            auto result = fuc.first(params, request_data);
+            auto result = fuc(params, request_data);
             auto t2 = std::chrono::steady_clock::now();
             auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
             LOG_TRACE_D("Time use : " << std::fixed << std::setprecision(3) << time_span.count());
 
             evbuffer_add_printf(evb, result.second.c_str());
             evhttp_send_reply(req, result.first, "OK", evb);
+            //evhttp_request_free(req);
         };
 
-        if (fuc.second)
-        {
-            std::thread(hand).detach();
-        }
-        else
-        {
-            hand();
-        }
+        (void)serverPtr->m_pool.enqueue(hand);
+        //std::thread(hand).detach();
+
     }
 
 }
 
-http_server::http_server()
-    :m_fixThreadCount(2),
+http_server::http_server(const unsigned int threads)
+    :m_fixThreadCount(threads),
     m_timeout(600),
-    m_fucMapMutex()
+    m_fucMapMutex(),
+    m_pool(threads)
 {
 }
 
@@ -116,70 +129,51 @@ http_server::~http_server()
 {
 }
 
-void http_server::setThreadCount(const unsigned int count)
-{
-    m_fixThreadCount = count;
-}
-
 void http_server::setTimeOut(const unsigned int timeout)
 {
     m_timeout = timeout;
 
 }
 
-void http_server::registFuction(int opt, const std::string& url, HttpFuc fuc, bool isSeparateThread)
+void http_server::registFuction(int opt, const std::string& url, HttpFuc fuc)
 {
     std::lock_guard<std::mutex> grd(m_fucMapMutex);
-    m_server_fuc_map[std::make_pair(opt, url)] = std::make_pair(fuc, isSeparateThread);
+    m_server_fuc_map[std::make_pair(opt, url)] = fuc;
 }
 
 int http_server::start(const char * ip, const unsigned short port)
 {
-    evutil_socket_t fd = NULL;
+    struct event_base *base = event_base_new();
 
-    for (unsigned int i = 0; i < m_fixThreadCount; i++)
-    {
-        struct event_base *base = event_base_new();
-
-        if (!base) {
-            fprintf(stderr, "Couldn't create an event_base: exiting\n");
-            return 1;
-        }
-
-        /* Create a new evhttp object to handle requests. */
-        struct evhttp *http = evhttp_new(base);
-        if (!http) {
-            fprintf(stderr, "couldn't create evhttp. Exiting.\n");
-            return 1;
-        }
-
-        if (NULL == fd)
-        {
-            struct evhttp_bound_socket *handle = evhttp_bind_socket_with_handle(http, ip, port);
-            if (!handle) {
-                fprintf(stderr, "couldn't bind to port %d. Exiting.\n", (int)port);
-                return 1;
-            }
-            fd = evhttp_bound_socket_get_fd(handle);
-            if (evutil_make_socket_nonblocking(fd) != 0)
-            {
-                LOG_TRACE_D("evutil_make_socket_nonblocking failed!! ");
-                return 1;
-            }
-        }
-        else
-        {
-            if (0 != evhttp_accept_socket(http, fd))
-            {
-                LOG_TRACE_D("evhttp_accept_socket failed!! ");
-                return 1;
-            }
-        }
-
-        evhttp_set_timeout(http, m_timeout);
-        evhttp_set_gencb(http, http_server_cb, this);
-        std::thread(event_base_dispatch, base).detach();
+    if (!base) {
+        fprintf(stderr, "Couldn't create an event_base: exiting\n");
+        return 1;
     }
+
+    /* Create a new evhttp object to handle requests. */
+    struct evhttp *http = evhttp_new(base);
+    if (!http) {
+        fprintf(stderr, "couldn't create evhttp. Exiting.\n");
+        return 1;
+    }
+
+    struct evhttp_bound_socket *handle = evhttp_bind_socket_with_handle(http, ip, port);
+    if (!handle) {
+        fprintf(stderr, "couldn't bind to port %d. Exiting.\n", (int)port);
+        return 1;
+    }
+    evutil_socket_t fd = evhttp_bound_socket_get_fd(handle);
+    if (evutil_make_socket_nonblocking(fd) != 0)
+    {
+        LOG_TRACE_D("evutil_make_socket_nonblocking failed!! ");
+        return 1;
+    }
+
+    evhttp_set_timeout(http, m_timeout);
+    evhttp_set_bevcb(http, http_bev_cb, this);
+    evhttp_set_gencb(http, http_server_cb, this);
+    std::thread(event_base_dispatch, base).detach();
+
     LOG_TRACE_D("Http server start ip " << ip <<":"<<port);
     return 0;
 }
