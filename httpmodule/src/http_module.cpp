@@ -64,13 +64,13 @@ HTTP_API int http_module_init(LogFuc fuc)
     return 0;
 }
 
-HTTP_API http_server_if* http_creat_server(const unsigned int threads)
+HTTP_API std::shared_ptr<http_server_if> http_creat_server(const unsigned int threads)
 {
-    return new http_server(threads);
+    return std::shared_ptr<http_server_if>(new http_server(threads));
 }
 
-HTTP_API http_client_if * http_creat_client(const char * ip, unsigned short port)
+HTTP_API std::shared_ptr<http_client_if> http_creat_client(const char * ip, unsigned short port)
 {
-    return new http_client(ip,port);
+    return std::shared_ptr<http_client_if>(new http_client(ip,port));
 }
 

@@ -37,7 +37,7 @@ struct http_server_fuc_struc
 class http_server_if
 {
 public:
-
+    virtual ~http_server_if() {};
     virtual void setTimeOut(const unsigned int timeout) = 0;
     virtual void registFuction(int opt, const std::string& url, HttpFuc fuc) = 0;
     virtual int start(const char* ip, const unsigned short port) = 0;
@@ -58,6 +58,7 @@ class http_client_if
 public:
     virtual void setTimeOut(const unsigned int timeout) = 0;
     virtual PairIntString request(int opt, const std::string& url, MapStringString params, const std::string & data) = 0;
+    virtual ~http_client_if() {};
 };
 
 
@@ -65,8 +66,8 @@ public:
 using LogFuc = std::function<void(int level,const char* msg)>;
 
 HTTP_API int http_module_init(LogFuc fuc = NULL);
-HTTP_API http_server_if* http_creat_server(const unsigned int threads = 4);
-HTTP_API http_client_if* http_creat_client(const char* ip,unsigned short port);
+HTTP_API std::shared_ptr<http_server_if> http_creat_server(const unsigned int threads = 4);
+HTTP_API std::shared_ptr<http_client_if> http_creat_client(const char* ip,unsigned short port);
 
 
 

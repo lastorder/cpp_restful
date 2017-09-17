@@ -44,7 +44,7 @@ int main()
 
     int ret = http_module_init(logimpl);
 
-    auto serverPtr = http_creat_server();
+    auto serverPtr = http_creat_server(16);
     serverPtr->registFuction(g_fuclist);
     serverPtr->start(IP, PORT);
 
@@ -59,11 +59,12 @@ int main()
         auto resturn = clientPtr->request(HTTP_OPT_POST, "/test2", params, "hello world!");
         resturn = clientPtr->request(HTTP_OPT_POST, "/test", params, "hello world!");
         resturn = clientPtr->request(HTTP_OPT_POST, "/sleep", params, "hello world!");
-    };
 
-    while (true)
+    };
+    int j = 10000;
+    while (j--)
     {
-        int i = 20;
+        int i = 50;
         while (i--)
         {
             std::thread(testhand).detach();
@@ -74,7 +75,7 @@ int main()
     }
 
 
-
+    //_CrtDumpMemoryLeaks();
     system("Pause");
     return 0;
 }
