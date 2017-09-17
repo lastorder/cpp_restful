@@ -50,7 +50,7 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     ON_SCOPE_EXIT([&] { if (decoded) evhttp_uri_free(decoded); });
 
     if (!decoded) {
-        LOG_TRACE_D("Not a good URI. Sending BADREQUEST !");
+        LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
         evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
         return;
     }
@@ -65,6 +65,7 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     if (NULL == arg)
     {
         evhttp_send_error(req, HTTP_INTERNAL, "Server ptr is NULL !");
+        LOG_TRACE_E("Server ptr is NULL !");
         return;
     }
     auto request_data = get_http_input_data(req);
@@ -87,7 +88,7 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     if (nullptr == fuc)
     {
         evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
-        LOG_TRACE_D("Server path not implemented ! ");
+        LOG_TRACE_E("Server path not implemented ! ");
         return;
     }
     else
@@ -145,26 +146,26 @@ int http_server::start(const char * ip, const unsigned short port)
     struct event_base *base = event_base_new();
 
     if (!base) {
-        fprintf(stderr, "Couldn't create an event_base: exiting\n");
+        LOG_TRACE_E("Couldn't create an event_base: exiting");
         return 1;
     }
 
     /* Create a new evhttp object to handle requests. */
     struct evhttp *http = evhttp_new(base);
     if (!http) {
-        fprintf(stderr, "couldn't create evhttp. Exiting.\n");
+        LOG_TRACE_E("couldn't create evhttp. Exiting.");
         return 1;
     }
 
     struct evhttp_bound_socket *handle = evhttp_bind_socket_with_handle(http, ip, port);
     if (!handle) {
-        fprintf(stderr, "couldn't bind to port %d. Exiting.\n", (int)port);
+        LOG_TRACE_E("couldn't bind to port : " << port);
         return 1;
     }
     evutil_socket_t fd = evhttp_bound_socket_get_fd(handle);
     if (evutil_make_socket_nonblocking(fd) != 0)
     {
-        LOG_TRACE_D("evutil_make_socket_nonblocking failed!! ");
+        LOG_TRACE_E("evutil_make_socket_nonblocking failed!! ");
         return 1;
     }
 
