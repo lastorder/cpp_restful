@@ -17,7 +17,7 @@ cd $basepath
 libeventfile=libevent-2.1.8-stable
 tar -xzf ${libeventfile}.tar.gz
 cd ${libeventfile}
-./configure --prefix=$basepath/install CPPFLAGS="-I${basepath}/install/include" LDFLAGS="-I${basepath}/install/lib"
+./configure --prefix=$basepath/install CPPFLAGS="-fPIC -I${basepath}/install/include" LDFLAGS="-L${basepath}/install/lib"
 make
 make install
 
@@ -33,7 +33,6 @@ cp -r install/include/event2 linux/include/event2
 cp -r ${libeventfile}/compat/sys/queue.h linux/include/event2
 cp -r install/include/openssl linux/include
 
-cp install/lib/libcrypto.a linux/lib
-cp install/lib/libssl.a linux/lib
-cp install/lib/libevent.a linux/lib
+cp install/lib/*.a linux/lib
+
 
