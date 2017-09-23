@@ -1,6 +1,6 @@
 #pragma once
-#include "../inc/http_module.h"
-#include "../inc/ThreadPool.h"
+#include "http_module.h"
+#include "ThreadPool.h"
 #include <map>
 #include <mutex>
 

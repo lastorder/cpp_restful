@@ -1,4 +1,4 @@
-#include "../inc/http_module.h"
+#include "http_module.h"
 
 #ifdef _WIN32
 #include <winsock2.h>

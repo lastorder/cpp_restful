@@ -4,8 +4,8 @@
 #include <iostream>
 #include <fstream>
 
-#include "../httpmodule/inc/http_module.h"
-#include "../httpmodule/inc/log_base.h"
+#include "http_module.h"
+#include "log_base.h"
 
 #include <thread>
 

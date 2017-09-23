@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../inc/log_base.h"
+#include "log_base.h"
 
 extern LogFuc g_logfuc;
 

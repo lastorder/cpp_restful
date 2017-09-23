@@ -1,7 +1,7 @@
 #pragma once
 #include <mutex>
 #include "evhttp.h"
-#include "..\inc\http_module.h"
+#include "http_module.h"
 class http_client : public http_client_if
 {
 public:

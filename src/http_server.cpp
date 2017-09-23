@@ -1,10 +1,10 @@
 #include "http_server.h"
 
 #include "evhttp.h"
-#include "event2\queue.h"
+#include "event2/queue.h"
 
 #include "http_module_log.h"
-#include "..\inc\scope_guard.h"
+#include "scope_guard.h"
 #include <thread>
 #include <chrono>
 
