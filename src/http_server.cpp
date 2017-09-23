@@ -1,7 +1,11 @@
 #include "http_server.h"
 
-#include "evhttp.h"
-#include "event2/queue.h"
+#include <event2/event.h>
+#include <event2/http.h>
+#include <event2/keyvalq_struct.h>
+#include <event2/queue.h>
+#include <event2/bufferevent.h>
+#include <event2/buffer.h>
 
 #include "http_module_log.h"
 #include "scope_guard.h"

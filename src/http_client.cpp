@@ -1,5 +1,7 @@
 #include "http_client.h"
 #include "http_module_log.h"
+#include <event2/http.h>
+#include <event2/buffer.h>
 
 std::string get_http_input_data(struct evhttp_request *req)
 {

@@ -19,7 +19,7 @@
 #include "http_module_log.h"
 #include "http_server.h"
 #include "http_client.h"
-#include "event2\thread.h "
+#include <event2/thread.h>
 
 LogFuc g_logfuc = NULL;
 HTTP_API int http_module_init(LogFuc fuc)

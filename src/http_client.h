@@ -1,6 +1,6 @@
 #pragma once
 #include <mutex>
-#include "evhttp.h"
+#include <event2/event.h>
 #include "http_module.h"
 class http_client : public http_client_if
 {
