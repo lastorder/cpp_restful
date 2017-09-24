@@ -8,11 +8,15 @@
 #include "log_base.h"
 
 #include <thread>
+#include <mutex>
 
 static std::ofstream  logFile("logfile.txt");
 
+
+std::mutex g_logMutex;
 void logimpl(int level, const char* msg)
 {
+    std::lock_guard<std::mutex> grd(g_logMutex);
     std::cout << msg;
     logFile << msg;
 }
@@ -23,12 +27,18 @@ void logimpl(int level, const char* msg)
 
 PairIntString test(const MapStringString& params, const std::string data)
 {
+    auto head = http_get_header("User-Agent");
+    if (head)
+    {
+        LOG_TRACE_D("get header User-Agent : " << head);
+    }
+    
     return PairIntString(200, "hello world test");
 }
 
 PairIntString sleep(const MapStringString& params, const std::string data)
 {
-    std::this_thread::sleep_for(std::chrono::seconds(10));
+    //std::this_thread::sleep_for(std::chrono::seconds(10));
     return PairIntString(200, "sleep for 10 secends !");
 }
 
@@ -69,7 +79,7 @@ int main()
     int j = 10000;
     while (j--)
     {
-        int i = 50;
+        int i = 2;
         while (i--)
         {
             std::thread(testhand).detach();

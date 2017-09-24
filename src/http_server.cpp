@@ -13,6 +13,7 @@
 #include <chrono>
 
 extern std::string get_http_input_data(struct evhttp_request *req);
+static thread_local struct evhttp_request * g_request = nullptr;
 
 static void http_prase_query(const char* qstr, std::map<std::string, std::string>& qmap)
 {
@@ -99,8 +100,9 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     {
         //evhttp_request_own(req);
         auto hand = [=]() {
+            g_request = req;
             struct evbuffer *evb = evbuffer_new();
-            ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); });
+            ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); g_request = nullptr; });
 
             LOG_TRACE_D("Start hand " << strUrl);
             auto time_start = std::chrono::steady_clock::now();
@@ -118,6 +120,16 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
 
     }
 
+}
+
+const char * http_get_header(const char * head)
+{
+    if (nullptr!= g_request)
+    {
+        auto heads = evhttp_request_get_input_headers(g_request);
+        return evhttp_find_header(heads, head);
+    }
+    return nullptr;
 }
 
 http_server::http_server(const unsigned int threads)
