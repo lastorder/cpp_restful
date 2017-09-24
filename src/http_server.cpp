@@ -59,7 +59,7 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
     }
 
     http_server* serverPtr = (http_server*)arg;
-    if (serverPtr->m_pool.task_size() > 1000)
+    if (serverPtr->m_pool.task_size() > serverPtr->m_maxQueue)
     {
         evhttp_send_error(req, HTTP_SERVUNAVAIL, "Server is busy!");
         LOG_TRACE_D("Server is busy! ");
@@ -159,7 +159,8 @@ http_server::http_server(const unsigned int threads)
     :m_fixThreadCount(threads),
     m_timeout(600),
     m_fucMapMutex(),
-    m_pool(threads)
+    m_pool(threads),
+    m_maxQueue(1000)
 {
 }
 
@@ -215,6 +216,23 @@ int http_server::start(const char * ip, const unsigned short port)
 
     LOG_TRACE_D("Http server start ip " << ip <<":"<<port);
     return 0;
+}
+
+void http_server::setMaxWaitingRequest(const unsigned int max)
+{
+    if (max > 1000)
+    {
+        m_maxQueue = 1000;
+    }
+    else if (max < 10)
+    {
+        m_maxQueue = 10;
+    }
+    else
+    {
+        m_maxQueue = max;
+    }
+    LOG_TRACE_D("setMaxWaitingRequest : " << m_maxQueue);
 }
 
 ServerFucMapValue http_server::getFuction(int opt, const std::string & url)

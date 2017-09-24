@@ -41,6 +41,7 @@ public:
     virtual void setTimeOut(const unsigned int timeout) = 0;
     virtual void registFuction(int opt, const std::string& url, HttpFuc fuc) = 0;
     virtual int start(const char* ip, const unsigned short port) = 0;
+    virtual void setMaxWaitingRequest(const unsigned int) = 0;
 
     void registFuction(const std::vector<http_server_fuc_struc> fuclist)
     {

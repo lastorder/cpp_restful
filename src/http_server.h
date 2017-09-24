@@ -28,6 +28,7 @@ public:
     virtual void setTimeOut(const unsigned int timeout);
     virtual void registFuction(int opt, const std::string& url, HttpFuc fuc);
     virtual int start(const char* ip, const unsigned short port);
+    virtual void setMaxWaitingRequest(const unsigned int);
 
     ServerFucMapValue getFuction(int opt, const std::string& url);
 
@@ -38,5 +39,6 @@ private:
     ServerFucMap m_server_fuc_map;
     std::mutex m_fucMapMutex;
     ThreadPool m_pool;
+    unsigned int m_maxQueue;
 };
 

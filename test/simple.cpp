@@ -50,7 +50,7 @@ PairIntString test()
 
 PairIntString sleep()
 {
-    //std::this_thread::sleep_for(std::chrono::seconds(10));
+    std::this_thread::sleep_for(std::chrono::seconds(10));
     return PairIntString(200, "sleep for 10 secends !");
 }
 
@@ -74,6 +74,7 @@ int main()
     auto serverPtr = http_creat_server(16);
     serverPtr->registFuction(g_fuclist);
     serverPtr->start(IP, PORT);
+    serverPtr->setMaxWaitingRequest(0);
 
     std::chrono::seconds dura(2);
     std::this_thread::sleep_for(dura);
