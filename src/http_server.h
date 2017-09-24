@@ -15,12 +15,16 @@ struct PairIntStringCmp
 using ServerFucMapValue = HttpFuc;
 using ServerFucMap = std::map<PairIntString, ServerFucMapValue>;
 
+
+class http_server;
+static void hand_request(struct evhttp_request * req, http_server * serverPtr);
 static void http_server_cb(struct evhttp_request *req, void *arg);
 
 class http_server : public http_server_if
 {
 
     friend void http_server_cb(struct evhttp_request *req, void *arg);
+    friend void hand_request(struct evhttp_request * req, http_server * serverPtr);
 
 public:
     http_server(const unsigned int threads);
