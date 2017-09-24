@@ -18,7 +18,7 @@
 
 using PairIntString = std::pair<int, std::string>;
 using MapStringString = std::map<std::string, std::string>;
-using HttpFuc = std::function<PairIntString(const MapStringString& params, const std::string& data)>;
+using HttpFuc = std::function<PairIntString(void)>;
 
 struct http_server_fuc_struc
 {
@@ -71,6 +71,8 @@ HTTP_API std::shared_ptr<http_client_if> http_creat_client(const char* ip,unsign
 
 // use in server callback function
 HTTP_API const char* http_get_header(const char*);
+HTTP_API const char* http_get_query(const char*);
+HTTP_API const unsigned char* http_get_data();
 
 
 

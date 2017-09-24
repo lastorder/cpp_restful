@@ -25,18 +25,30 @@ void logimpl(int level, const char* msg)
 #define LOG_TRACE_E(msg) LOG_FORMAT_MSG(logimpl,4,"HTTP_MODULE",msg)
 
 
-PairIntString test(const MapStringString& params, const std::string data)
+PairIntString test()
 {
     auto head = http_get_header("User-Agent");
     if (head)
     {
         LOG_TRACE_D("get header User-Agent : " << head);
     }
+
+    auto query = http_get_query("ABC");
+    if (query)
+    {
+        LOG_TRACE_D("get query ABC : " << query);
+    }
+
+    auto data = http_get_data();
+    if (data)
+    {
+        LOG_TRACE_D("get data : " << data);
+    }
     
     return PairIntString(200, "hello world test");
 }
 
-PairIntString sleep(const MapStringString& params, const std::string data)
+PairIntString sleep()
 {
     //std::this_thread::sleep_for(std::chrono::seconds(10));
     return PairIntString(200, "sleep for 10 secends !");
@@ -79,7 +91,7 @@ int main()
     int j = 10000;
     while (j--)
     {
-        int i = 2;
+        int i = 50;
         while (i--)
         {
             std::thread(testhand).detach();

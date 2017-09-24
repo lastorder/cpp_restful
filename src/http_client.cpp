@@ -3,30 +3,23 @@
 #include <event2/http.h>
 #include <event2/buffer.h>
 
-std::string get_http_input_data(struct evhttp_request *req)
+const unsigned char* get_http_input_data(struct evhttp_request *req)
 {
-    std::string data = "";
     struct evbuffer *evbuf = evhttp_request_get_input_buffer(req);
     // NULL terminal buffer
-    if (evbuf)
-    {
-        evbuffer_add(evbuf, "", 1);
-        const char * pData = (char*)evbuffer_pullup(evbuf, -1);
-        if (pData)
-        {
-            data = pData;
-        }
-        else
-        {
-            LOG_TRACE_E("evbuffer data is null ! ");
-        }
-    }
-    else
+    if (!evbuf)
     {
         LOG_TRACE_E("evbuffer is null ! ");
+        return nullptr;
     }
 
-    return data;
+    if (0 != evbuffer_add(evbuf, "", 1))
+    {
+        LOG_TRACE_E("evbuffer_add failed ! ");
+        return nullptr;
+    }
+     
+    return evbuffer_pullup(evbuf, -1);
 }
 
 static void http_client_cb(struct evhttp_request *req, void *arg)
@@ -43,7 +36,13 @@ static void http_client_cb(struct evhttp_request *req, void *arg)
 
     http_client* clientptr = (http_client *)arg;
     clientptr->m_httpCode = evhttp_request_get_response_code(req);
-    clientptr->m_httpData = get_http_input_data(req);
+
+    auto data = get_http_input_data(req);
+
+    if (data)
+    {
+        clientptr->m_httpData = (char*)data;
+    }
 
     event_base_loopexit(clientptr->m_eventbase, NULL);
 }

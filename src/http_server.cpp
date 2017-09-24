@@ -12,8 +12,9 @@
 #include <thread>
 #include <chrono>
 
-extern std::string get_http_input_data(struct evhttp_request *req);
+extern const unsigned char* get_http_input_data(struct evhttp_request *req);
 static thread_local struct evhttp_request * g_request = nullptr;
+static thread_local struct evkeyvalq g_querys;
 
 static void http_prase_query(const char* qstr, std::map<std::string, std::string>& qmap)
 {
@@ -50,84 +51,106 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
 
     LOG_TRACE_D("Got a [" << opt<<"] request for "<< uri);
 
-    /* Decode the URI */
-    struct evhttp_uri *decoded = evhttp_uri_parse(uri);
-    ON_SCOPE_EXIT([&] { if (decoded) evhttp_uri_free(decoded); });
-
-    if (!decoded) {
-        LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
-        evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
-        return;
-    }
-
-    const char* path = evhttp_uri_get_path(decoded);
-    std::string strUrl = "/";
-    if (path) strUrl = path;
-
-    std::map<std::string, std::string> params;
-    http_prase_query(evhttp_uri_get_query(decoded), params);
-
     if (NULL == arg)
     {
         evhttp_send_error(req, HTTP_INTERNAL, "Server ptr is NULL !");
         LOG_TRACE_E("Server ptr is NULL !");
         return;
     }
-    auto request_data = get_http_input_data(req);
-    if (!request_data.empty())
-    {
-        LOG_TRACE_D("request data : "<< request_data.c_str());
-    }
 
     http_server* serverPtr = (http_server*)arg;
-
-    if (serverPtr->m_pool.task_size() > 4* serverPtr->m_fixThreadCount)
+    if (serverPtr->m_pool.task_size() > 1000)
     {
         evhttp_send_error(req, HTTP_SERVUNAVAIL, "Server is busy!");
         LOG_TRACE_D("Server is busy! ");
         return;
     }
 
-    auto fuc = serverPtr->getFuction(opt, strUrl);
+    auto hand = [=]() {
+        /* Decode the URI */
+        struct evhttp_uri *decoded = evhttp_uri_parse(uri);
+        ON_SCOPE_EXIT([&] { if (decoded) evhttp_uri_free(decoded); });
 
-    if (nullptr == fuc)
-    {
-        evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
-        LOG_TRACE_E("Server path not implemented ! ");
-        return;
-    }
-    else
-    {
-        //evhttp_request_own(req);
-        auto hand = [=]() {
-            g_request = req;
-            struct evbuffer *evb = evbuffer_new();
-            ON_SCOPE_EXIT([&] { if (evb) evbuffer_free(evb); g_request = nullptr; });
+        if (!decoded) {
+            LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
+            evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
+            return;
+        }
 
-            LOG_TRACE_D("Start hand " << strUrl);
-            auto time_start = std::chrono::steady_clock::now();
-            auto result = fuc(params, request_data);
-            auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - time_start);
-            LOG_TRACE_D("End hand " << strUrl <<" , Time use " << std::fixed << std::setprecision(3) << time_span.count());
+        const char* path = evhttp_uri_get_path(decoded);
+        if (!path)
+        {
+            LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
+            evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
+            return;
+        }
 
-            evbuffer_add_printf(evb, result.second.c_str());
-            evhttp_send_reply(req, result.first, "OK", evb);
-            //evhttp_request_free(req);
-        };
+        auto fuc = serverPtr->getFuction(opt, path);
+        if (nullptr == fuc)
+        {
+            evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
+            LOG_TRACE_E("Server path not implemented ! ");
+            return;
+        }
 
-        (void)serverPtr->m_pool.enqueue(hand);
-        //std::thread(hand).detach();
+        struct evbuffer *evb = evbuffer_new();
+        if (!evb)
+        {
+            evhttp_send_error(req, HTTP_INTERNAL, "evbuffer_new error !");
+            LOG_TRACE_E("evbuffer_new error ! ");
+            return;
+        }
+        g_request = req;
+        TAILQ_INIT(&g_querys);
+        ON_SCOPE_EXIT([&] {evbuffer_free(evb); g_request = nullptr; evhttp_clear_headers(&g_querys);});
 
-    }
+        // prase querys, and story in threadlocal g_querys
+        auto cquerys = evhttp_uri_get_query(decoded);
+        if (cquerys)
+        {
+            if (0 != evhttp_parse_query_str(cquerys, &g_querys))
+            {
+                LOG_TRACE_D("evhttp_parse_query_str failed!! ");
+                TAILQ_INIT(&g_querys);
+            }
+        }
+
+        LOG_TRACE_D("Start hand " << path);
+        auto time_start = std::chrono::steady_clock::now();
+        auto result = fuc();
+        auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - time_start);
+        LOG_TRACE_D("End hand " << path <<" , Time use " << std::fixed << std::setprecision(3) << time_span.count());
+
+        evbuffer_add_printf(evb, result.second.c_str());
+        evhttp_send_reply(req, result.first, "OK", evb);
+
+    };
+
+    (void)serverPtr->m_pool.enqueue(hand);
+
 
 }
 
-const char * http_get_header(const char * head)
+HTTP_API const char * http_get_header(const char * head)
 {
     if (nullptr!= g_request)
     {
         auto heads = evhttp_request_get_input_headers(g_request);
         return evhttp_find_header(heads, head);
+    }
+    return nullptr;
+}
+
+HTTP_API const char * http_get_query(const char * query)
+{
+    return evhttp_find_header(&g_querys, query);
+}
+
+HTTP_API const unsigned char * http_get_data()
+{
+    if (nullptr != g_request)
+    {
+        return get_http_input_data(g_request);
     }
     return nullptr;
 }
