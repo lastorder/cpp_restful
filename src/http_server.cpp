@@ -52,20 +52,13 @@ static void hand_request(struct evhttp_request * req, http_server * serverPtr)
     struct evhttp_uri *decoded = evhttp_uri_parse(uri);
     ON_SCOPE_EXIT([&] { if (decoded) evhttp_uri_free(decoded); });
 
-    if (!decoded) {
+    if (!decoded || !evhttp_uri_get_path(decoded)) {
         LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
         evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
         return;
     }
 
     const char* path = evhttp_uri_get_path(decoded);
-    if (!path)
-    {
-        LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
-        evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
-        return;
-    }
-
     auto fuc = serverPtr->getFuction(opt, path);
     if (nullptr == fuc)
     {
@@ -81,19 +74,17 @@ static void hand_request(struct evhttp_request * req, http_server * serverPtr)
         LOG_TRACE_E("evbuffer_new error ! ");
         return;
     }
+
     g_request = req;
     TAILQ_INIT(&g_querys);
     ON_SCOPE_EXIT([&] {evbuffer_free(evb); g_request = nullptr; evhttp_clear_headers(&g_querys); });
 
     // prase querys, and story in threadlocal g_querys
     auto cquerys = evhttp_uri_get_query(decoded);
-    if (cquerys)
+    if (cquerys && evhttp_parse_query_str(cquerys, &g_querys))
     {
-        if (0 != evhttp_parse_query_str(cquerys, &g_querys))
-        {
-            LOG_TRACE_D("evhttp_parse_query_str failed!! ");
-            TAILQ_INIT(&g_querys);
-        }
+        LOG_TRACE_D("evhttp_parse_query_str failed!! ");
+        TAILQ_INIT(&g_querys);
     }
 
     LOG_TRACE_D("Start hand " << path);
