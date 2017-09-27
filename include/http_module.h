@@ -71,9 +71,9 @@ HTTP_API std::shared_ptr<http_server_if> http_creat_server(const unsigned int th
 HTTP_API std::shared_ptr<http_client_if> http_creat_client(const char* ip,unsigned short port);
 
 // use in server callback function
-HTTP_API const char* http_get_header(const char*);
-HTTP_API const char* http_get_query(const char*);
-HTTP_API const unsigned char* http_get_data();
+HTTP_API const char* request_get_header(const char*);
+HTTP_API const char* request_get_query(const char*);
+HTTP_API const unsigned char* request_get_body();
 
 
 

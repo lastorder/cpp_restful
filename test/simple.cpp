@@ -27,19 +27,19 @@ void logimpl(int level, const char* msg)
 
 PairIntString test()
 {
-    auto head = http_get_header("User-Agent");
+    auto head = request_get_header("User-Agent");
     if (head)
     {
         LOG_TRACE_D("get header User-Agent : " << head);
     }
 
-    auto query = http_get_query("ABC");
+    auto query = request_get_query("ABC");
     if (query)
     {
         LOG_TRACE_D("get query ABC : " << query);
     }
 
-    auto data = http_get_data();
+    auto data = request_get_body();
     if (data)
     {
         LOG_TRACE_D("get data : " << data);

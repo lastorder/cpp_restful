@@ -132,7 +132,7 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
 
 }
 
-HTTP_API const char * http_get_header(const char * head)
+HTTP_API const char * request_get_header(const char * head)
 {
     if (nullptr!= g_request)
     {
@@ -142,12 +142,12 @@ HTTP_API const char * http_get_header(const char * head)
     return nullptr;
 }
 
-HTTP_API const char * http_get_query(const char * query)
+HTTP_API const char * request_get_query(const char * query)
 {
     return evhttp_find_header(&g_querys, query);
 }
 
-HTTP_API const unsigned char * http_get_data()
+HTTP_API const unsigned char * request_get_body()
 {
     if (nullptr != g_request)
     {
