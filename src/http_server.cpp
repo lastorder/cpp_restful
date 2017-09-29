@@ -44,29 +44,10 @@ static struct bufferevent * http_bev_cb(struct event_base *base, void *arg)
         base, -1,BEV_OPT_CLOSE_ON_FREE| BEV_OPT_CLOSE_ON_FREE| BEV_OPT_DEFER_CALLBACKS);
 }
 
-static void hand_request(struct evhttp_request * req, http_server * serverPtr)
+static void hand_request(struct evhttp_request * req, struct evhttp_uri *uri, const HttpFuc& fuc)
 {
-    const char *uri = evhttp_request_get_uri(req);
-    evhttp_cmd_type opt = evhttp_request_get_command(req);
-
-    struct evhttp_uri *decoded = evhttp_uri_parse(uri);
-    ON_SCOPE_EXIT([&] { if (decoded) evhttp_uri_free(decoded); });
-
-    if (!decoded || !evhttp_uri_get_path(decoded)) {
-        LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
-        evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
-        return;
-    }
-
-    const char* path = evhttp_uri_get_path(decoded);
-    auto fuc = serverPtr->getFuction(opt, path);
-    if (nullptr == fuc)
-    {
-        evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
-        LOG_TRACE_E("Server path not implemented ! ");
-        return;
-    }
-
+    ON_SCOPE_EXIT([&] { evhttp_uri_free(uri);});
+    const char* path = evhttp_uri_get_path(uri);
     struct evbuffer *evb = evbuffer_new();
     if (!evb)
     {
@@ -80,7 +61,7 @@ static void hand_request(struct evhttp_request * req, http_server * serverPtr)
     ON_SCOPE_EXIT([&] {evbuffer_free(evb); g_request = nullptr; evhttp_clear_headers(&g_querys); });
 
     // prase querys, and story in threadlocal g_querys
-    auto cquerys = evhttp_uri_get_query(decoded);
+    auto cquerys = evhttp_uri_get_query(uri);
     if (cquerys && evhttp_parse_query_str(cquerys, &g_querys))
     {
         LOG_TRACE_D("evhttp_parse_query_str failed!! ");
@@ -119,7 +100,26 @@ static void http_server_cb(struct evhttp_request *req, void *arg)
         return;
     }
 
-    (void)serverPtr->m_pool.enqueue(hand_request,req, serverPtr);
+    struct evhttp_uri *decoded = evhttp_uri_parse(uri);
+    ScopeGuard urlgd([&] { if (decoded) evhttp_uri_free(decoded); });
+
+    if (!decoded || !evhttp_uri_get_path(decoded)) {
+        LOG_TRACE_E("Not a good URI. Sending BADREQUEST !");
+        evhttp_send_error(req, HTTP_BADREQUEST, "Sending BADREQUEST !");
+        return;
+    }
+
+    const char* path = evhttp_uri_get_path(decoded);
+    HttpFuc fuc = serverPtr->getFuction(opt, path);
+    if (nullptr == fuc)
+    {
+        evhttp_send_error(req, HTTP_NOTIMPLEMENTED, "Server path not implemented !");
+        LOG_TRACE_E("Server path not implemented ! ");
+        return;
+    }
+
+    urlgd.Dismiss();
+    (void)serverPtr->m_pool.enqueue(hand_request,req, decoded,fuc);
 
 }
 
