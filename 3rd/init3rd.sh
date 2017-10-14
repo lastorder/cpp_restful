@@ -17,7 +17,7 @@ cd $basepath
 libeventfile=libevent-2.1.8-stable
 tar -xzf ${libeventfile}.tar.gz
 cd ${libeventfile}
-./configure --prefix=$basepath/install CPPFLAGS="-fPIC -I${basepath}/install/include" LDFLAGS="-L${basepath}/install/lib"
+./configure --prefix=$basepath/install --disable-libevent-regress --disable-samples CPPFLAGS="-fPIC -I${basepath}/install/include" LDFLAGS="-L${basepath}/install/lib"
 make
 make install
 

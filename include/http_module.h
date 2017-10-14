@@ -10,7 +10,7 @@
     #define HTTP_API
 #endif
 
-
+#include <string>
 #include <map>
 #include <functional>
 #include <memory>
