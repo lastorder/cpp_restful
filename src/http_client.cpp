@@ -32,6 +32,7 @@ static void http_client_cb(struct evhttp_request *req, void *arg)
 
     if (!req) {
         LOG_TRACE_D("evhttp_request is null ! ");
+        return;
     }
 
     http_client* clientptr = (http_client *)arg;

@@ -74,7 +74,7 @@ static void hand_request(struct evhttp_request * req, struct evhttp_uri *uri, co
     auto time_span = std::chrono::duration_cast<std::chrono::duration<double>>(std::chrono::steady_clock::now() - time_start);
     LOG_TRACE_D("End hand " << path << " , Time use " << std::fixed << std::setprecision(3) << time_span.count());
 
-    evbuffer_add_printf(evb, result.second.c_str());
+    evbuffer_add(evb, result.second.c_str(),result.second.length());
     evhttp_send_reply(req, result.first, "OK", evb);
 }
 

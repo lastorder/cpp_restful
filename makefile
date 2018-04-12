@@ -31,4 +31,4 @@ TEST_SRCS := $(wildcard test/*.cpp)
 TEST_OBJS := $(patsubst %cpp,%o,$(TEST_SRCS))
 .PHONY: test
 test:$(TEST_OBJS)
-	$(COMPILER) -o simple test/simple.o -L./ -levhttp -lrt -lpthread
+	$(COMPILER) -o simple test/simple.o -L./ -levhttp -lpthread
