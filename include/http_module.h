@@ -66,7 +66,7 @@ public:
 
 using LogFuc = std::function<void(int level,const char* msg)>;
 
-HTTP_API int http_module_init(LogFuc fuc = NULL);
+HTTP_API int http_module_init(LogFuc fuc = nullptr);
 HTTP_API std::shared_ptr<http_server_if> http_creat_server(const unsigned int threads = 4);
 HTTP_API std::shared_ptr<http_client_if> http_creat_client(const char* ip,unsigned short port);
 

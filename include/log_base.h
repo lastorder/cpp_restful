@@ -17,7 +17,7 @@ using LogFuc = std::function<void(int level, const char* msg)>;
 #endif
 
 #define LOG_FORMAT_MSG(logfuc,level,modulename,msg) \
-if(NULL != logfuc)\
+if(nullptr != logfuc)\
 {\
     std::stringstream oss;\
     std::time_t t = std::time(nullptr);\
