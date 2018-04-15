@@ -16,3 +16,7 @@ aux_source_directory(${CMAKE_CURRENT_SOURCE_DIR}/src DIR_SRCS)
 # 指定生成目标
 add_library(cpp_restful ${DIR_SRCS})
 target_link_libraries(cpp_restful event event_pthreads)
+
+# 生产示例程序
+add_executable(sample test/simple.cpp)
+target_link_libraries(sample cpp_restful)
